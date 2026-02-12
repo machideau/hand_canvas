@@ -4,6 +4,7 @@ import { BalloonObject, Stroke } from './types';
 import { Scene3D } from './scene3D';
 import { BalloonInflator } from './balloonInflator';
 import { SCENE, TIMING } from './constants';
+import { audioManager } from './audioManager';
 
 export class ObjectManager {
   private scene: Scene3D;
@@ -75,6 +76,9 @@ export class ObjectManager {
           z: obj.scale,
           duration: TIMING.INFLATE_DURATION,
           ease: 'elastic.out(1, 0.5)',
+          onStart: () => {
+            audioManager.playSpatial('inflate', obj.mesh.position, 0.4);
+          },
           onComplete: resolve
         });
 
@@ -186,6 +190,8 @@ export class ObjectManager {
       }
     });
 
+    audioManager.playSpatial('poke', obj.mesh.position, 0.3, 0.8 + Math.random() * 0.4);
+
     // Jiggle rotation
     gsap.to(obj.mesh.rotation, {
       x: obj.mesh.rotation.x + (Math.random() - 0.5) * 0.5,
@@ -208,6 +214,8 @@ export class ObjectManager {
       duration: 0.15,
       ease: 'power2.out'
     });
+
+    audioManager.playSpatial('select', obj.mesh.position, 0.2);
   }
 
   moveGrabbedObject(obj: BalloonObject, screenX: number, screenY: number): void {
@@ -260,6 +268,7 @@ export class ObjectManager {
             resolve();
           }
         });
+        audioManager.playSpatial('pop', obj.mesh.position, 0.4, 0.9 + Math.random() * 0.2);
       } else {
         // Pop animation
         gsap.to(obj.mesh.scale, {

@@ -7,6 +7,7 @@ import { ObjectManager } from './objectManager';
 import { Multiplayer, MultiplayerEvent } from './multiplayer';
 import { HandLandmarks, GestureState, BalloonObject, Stroke } from './types';
 import { GESTURE, TIMING } from './constants';
+import { audioManager } from './audioManager';
 
 class HandCanvas {
   // Core components
@@ -138,7 +139,11 @@ class HandCanvas {
     sceneCanvas.addEventListener('touchend', () => this.onMouseUp());
 
     // Click to select objects
-    sceneCanvas.addEventListener('click', (e) => this.onSceneClick(e));
+    sceneCanvas.addEventListener('click', (e) => {
+      this.onSceneClick(e);
+      // Initialize audio on first click
+      audioManager.initialize();
+    });
   }
 
   private setupButtonListeners(): void {
@@ -198,6 +203,20 @@ class HandCanvas {
       cameraPreview?.classList.toggle('expanded');
       // Update preview canvas size when expanded
       this.updatePreviewCanvasSize();
+    });
+
+    // Mute button
+    const muteBtn = document.getElementById('mute-btn');
+    const muteIcon = document.getElementById('mute-icon');
+    const muteText = document.getElementById('mute-text');
+
+    muteBtn?.addEventListener('click', () => {
+      const isMuted = !audioManager.getMute();
+      audioManager.setMute(isMuted);
+      if (muteIcon) muteIcon.textContent = isMuted ? '🔇' : '🔊';
+      if (muteText) muteText.textContent = isMuted ? 'Sound Off' : 'Sound On';
+      // Ensure initialized
+      audioManager.initialize();
     });
   }
 
@@ -809,6 +828,9 @@ class HandCanvas {
 
   private animate(): void {
     requestAnimationFrame(() => this.animate());
+
+    // Update audio listener to follow camera perspective
+    audioManager.updateListener(this.scene3D.getCamera());
 
     const now = performance.now();
     const deltaTime = this.lastFrameTime > 0 ? (now - this.lastFrameTime) / 1000 : 0.016;
