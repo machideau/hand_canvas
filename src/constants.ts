@@ -99,3 +99,10 @@ export const BACKGROUND = {
   COLOR_START: '#020617',  // navy black
   COLOR_END: '#1E1B4B'     // deep indigo
 };
+
+// User session settings
+export const USER_SESSION = {
+  MAX_BALLOONS_PER_USER: 100,  // Maximum balloons stored per user
+  STORAGE_PREFIX: 'hand_canvas_'
+};
+

@@ -5,7 +5,8 @@ import { HandVisualizer } from './handVisualizer';
 import { Scene3D } from './scene3D';
 import { ObjectManager } from './objectManager';
 import { Multiplayer, MultiplayerEvent } from './multiplayer';
-import { HandLandmarks, GestureState, BalloonObject, Stroke } from './types';
+import { userSession } from './userSession';
+import { HandLandmarks, GestureState, BalloonObject, Stroke, User } from './types';
 import { GESTURE, TIMING } from './constants';
 import { audioManager } from './audioManager';
 
@@ -35,6 +36,14 @@ class HandCanvas {
   private joinCodeInput: HTMLInputElement;
   private statusDot: HTMLElement;
   private statusText: HTMLElement;
+
+  // User session modal elements
+  private userModal: HTMLElement;
+  private userNameInput: HTMLInputElement;
+  private userListElement: HTMLElement;
+  private currentUserDisplay: HTMLElement;
+  private historyModal: HTMLElement;
+  private historyListElement: HTMLElement;
 
   // State
   private isDrawing = false;
@@ -85,6 +94,14 @@ class HandCanvas {
     this.statusDot = document.getElementById('status-dot')!;
     this.statusText = document.getElementById('status-text')!;
 
+    // User session modals
+    this.userModal = document.getElementById('user-modal')!;
+    this.userNameInput = document.getElementById('user-name-input') as HTMLInputElement;
+    this.userListElement = document.getElementById('user-list')!;
+    this.currentUserDisplay = document.getElementById('current-user-display')!;
+    this.historyModal = document.getElementById('history-modal')!;
+    this.historyListElement = document.getElementById('history-list')!;
+
     // Initialize components
     this.handTracker = new HandTracker(videoElement);
     this.gestureDetector = new GestureDetector();
@@ -106,6 +123,7 @@ class HandCanvas {
     this.setupButtonListeners();
     this.setupPreviewDrag();
     this.setupMultiplayer();
+    this.setupUserSession();
 
     // Start the application
     this.init();
@@ -920,6 +938,193 @@ class HandCanvas {
 
   private hideStatus(): void {
     this.statusMessage.classList.remove('visible');
+  }
+
+  // User Session Management
+  private setupUserSession(): void {
+    // Setup balloon creation callback
+    this.objectManager.onBalloonCreated((stroke, color) => {
+      userSession.saveBalloon(stroke, color);
+    });
+
+    // Update current user display
+    this.updateCurrentUserDisplay();
+
+    // Setup button listeners for user management
+    const userBtn = document.getElementById('user-btn');
+    userBtn?.addEventListener('click', () => this.openUserModal());
+
+    const historyBtn = document.getElementById('history-btn');
+    historyBtn?.addEventListener('click', () => this.openHistoryModal());
+
+    // User modal listeners
+    const userModalClose = document.getElementById('user-modal-close');
+    userModalClose?.addEventListener('click', () => this.closeUserModal());
+
+    const userLoginBtn = document.getElementById('user-login-btn');
+    userLoginBtn?.addEventListener('click', () => this.loginUser());
+
+    this.userNameInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.loginUser();
+    });
+
+    // History modal listeners
+    const historyModalClose = document.getElementById('history-modal-close');
+    historyModalClose?.addEventListener('click', () => this.closeHistoryModal());
+
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    clearHistoryBtn?.addEventListener('click', () => this.clearUserHistory());
+
+    // Listen to user changes
+    userSession.onUserChange((user) => {
+      this.updateCurrentUserDisplay();
+      // Clear current scene when switching users
+      this.clearAll();
+    });
+  }
+
+  private updateCurrentUserDisplay(): void {
+    const user = userSession.getCurrentUser();
+    if (user) {
+      this.currentUserDisplay.textContent = user.name;
+      this.currentUserDisplay.style.display = 'block';
+    } else {
+      this.currentUserDisplay.textContent = 'Guest';
+      this.currentUserDisplay.style.display = 'block';
+    }
+  }
+
+  private openUserModal(): void {
+    audioManager.playUI('select', 0.4);
+    this.renderUserList();
+    this.userModal.classList.add('visible');
+  }
+
+  private closeUserModal(): void {
+    this.userModal.classList.remove('visible');
+  }
+
+  private renderUserList(): void {
+    const users = userSession.getAllUsers();
+    const currentUser = userSession.getCurrentUser();
+
+    this.userListElement.innerHTML = '';
+
+    if (users.length === 0) {
+      this.userListElement.innerHTML = '<div class="empty-state">No users yet. Create one above!</div>';
+      return;
+    }
+
+    users.forEach(user => {
+      const userItem = document.createElement('div');
+      userItem.className = 'user-item';
+      if (currentUser && user.id === currentUser.id) {
+        userItem.classList.add('active');
+      }
+
+      userItem.innerHTML = `
+        <div class="user-info">
+          <div class="user-name">${user.name}</div>
+          <div class="user-date">Joined ${new Date(user.createdAt).toLocaleDateString()}</div>
+        </div>
+      `;
+
+      userItem.addEventListener('click', () => {
+        userSession.setUser(user.name);
+        this.closeUserModal();
+      });
+
+      this.userListElement.appendChild(userItem);
+    });
+  }
+
+  private loginUser(): void {
+    const userName = this.userNameInput.value.trim();
+    if (!userName) {
+      this.showStatus('Please enter a username', 2000);
+      return;
+    }
+
+    userSession.setUser(userName);
+    this.userNameInput.value = '';
+    this.closeUserModal();
+    this.showStatus(`Welcome, ${userName}!`, 2000);
+    audioManager.playUI('join', 0.5);
+  }
+
+  private openHistoryModal(): void {
+    const user = userSession.getCurrentUser();
+    if (!user) {
+      this.showStatus('Please login first', 2000);
+      return;
+    }
+
+    audioManager.playUI('select', 0.4);
+    this.renderHistory();
+    this.historyModal.classList.add('visible');
+  }
+
+  private closeHistoryModal(): void {
+    this.historyModal.classList.remove('visible');
+  }
+
+  private renderHistory(): void {
+    const user = userSession.getCurrentUser();
+    if (!user) return;
+
+    const history = userSession.getUserHistory();
+    this.historyListElement.innerHTML = '';
+
+    if (history.balloons.length === 0) {
+      this.historyListElement.innerHTML = '<div class="empty-state">No creations yet. Start drawing!</div>';
+      return;
+    }
+
+    // Show most recent first
+    const sortedBalloons = [...history.balloons].reverse();
+
+    sortedBalloons.forEach(balloon => {
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+
+      const date = new Date(balloon.createdAt);
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dateStr = date.toLocaleDateString();
+
+      historyItem.innerHTML = `
+        <div class="balloon-preview" style="background: ${balloon.color}"></div>
+        <div class="balloon-info">
+          <div class="balloon-time">${timeStr}</div>
+          <div class="balloon-date">${dateStr}</div>
+          <div class="balloon-points">${balloon.stroke.points.length} points</div>
+        </div>
+        <button class="load-btn">Load</button>
+      `;
+
+      const loadBtn = historyItem.querySelector('.load-btn');
+      loadBtn?.addEventListener('click', () => {
+        this.loadBalloonFromHistory(balloon.stroke);
+        this.closeHistoryModal();
+      });
+
+      this.historyListElement.appendChild(historyItem);
+    });
+  }
+
+  private async loadBalloonFromHistory(stroke: Stroke): Promise<void> {
+    await this.objectManager.createFromStroke(stroke);
+    this.showStatus('Balloon loaded!', 1500);
+  }
+
+  private clearUserHistory(): void {
+    const user = userSession.getCurrentUser();
+    if (!user) return;
+
+    if (confirm(`Clear all history for ${user.name}?`)) {
+      userSession.clearHistory();
+      this.renderHistory();
+      this.showStatus('History cleared', 1500);
+    }
   }
 }
 

@@ -610,6 +610,207 @@
       }
     }
 
+    /* User Display */
+    .user-display {
+      padding: 10px 16px;
+      background: rgba(var(--primary-rgb), 0.15);
+      border: 1px solid var(--border-color);
+      border-radius: 25px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 400;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* User Modal Styles */
+    .user-input-section {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .user-input-section input {
+      flex: 1;
+      padding: 14px 18px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+    }
+
+    .user-input-section input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .user-input-section input:focus {
+      outline: none;
+      border-color: rgba(var(--primary-rgb), 0.5);
+    }
+
+    .action-btn-primary {
+      padding: 14px 24px;
+      background: rgba(var(--primary-rgb), 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn-primary:hover {
+      background: rgba(var(--primary-rgb), 0.3);
+    }
+
+    .action-btn-secondary {
+      width: 100%;
+      padding: 12px;
+      margin-top: 16px;
+      background: rgba(255, 100, 100, 0.15);
+      border: 1px solid rgba(255, 100, 100, 0.3);
+      border-radius: 12px;
+      color: #ff6464;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn-secondary:hover {
+      background: rgba(255, 100, 100, 0.25);
+      border-color: rgba(255, 100, 100, 0.5);
+    }
+
+    .user-list {
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .user-item {
+      padding: 14px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .user-item:hover {
+      background: rgba(var(--primary-rgb), 0.1);
+      border-color: rgba(var(--primary-rgb), 0.4);
+    }
+
+    .user-item.active {
+      background: rgba(var(--primary-rgb), 0.15);
+      border-color: rgba(var(--primary-rgb), 0.5);
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .user-name {
+      color: var(--primary);
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .user-date {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* History Modal Styles */
+    .history-list {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .history-item:hover {
+      background: rgba(var(--primary-rgb), 0.05);
+      border-color: rgba(var(--primary-rgb), 0.3);
+    }
+
+    .balloon-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .balloon-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .balloon-time {
+      color: var(--primary);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .balloon-date {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .balloon-points {
+      color: rgba(var(--primary-rgb), 0.7);
+      font-size: 11px;
+    }
+
+    .load-btn {
+      padding: 8px 16px;
+      background: rgba(var(--primary-rgb), 0.15);
+      border: 1px solid rgba(var(--primary-rgb), 0.3);
+      border-radius: 8px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .load-btn:hover {
+      background: rgba(var(--primary-rgb), 0.25);
+      border-color: rgba(var(--primary-rgb), 0.5);
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+
     /* Loading overlay */
     #loading-overlay {
       position: absolute;
@@ -978,6 +1179,15 @@
 
         <!-- Action buttons -->
         <div class="action-buttons">
+          <div id="current-user-display" class="user-display" style="display: none;"></div>
+          <button class="action-btn" id="user-btn" title="User Login">
+            <span class="icon">👤</span>
+            <span class="btn-text">User</span>
+          </button>
+          <button class="action-btn" id="history-btn" title="View History">
+            <span class="icon">📜</span>
+            <span class="btn-text">History</span>
+          </button>
           <button class="action-btn" id="clear-all-btn" title="Clear All">
             <span class="icon">🗑️</span>
             <span class="btn-text">Clear All</span>
@@ -1061,6 +1271,42 @@
             <span class="status-dot" id="status-dot"></span>
             <span id="status-text">Not connected</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal-overlay" id="user-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">User Login</h2>
+          <button class="modal-close" id="user-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Enter your name to save your creations!</p>
+
+          <div class="user-input-section">
+            <input type="text" id="user-name-input" placeholder="Enter your name" maxlength="20">
+            <button class="action-btn-primary" id="user-login-btn">Login</button>
+          </div>
+
+          <div class="divider"><span>or select existing user</span></div>
+
+          <div id="user-list" class="user-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal-overlay" id="history-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 class="modal-title">Your Creations</h2>
+          <button class="modal-close" id="history-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="history-list" class="history-list"></div>
+          <button class="action-btn-secondary" id="clear-history-btn">Clear All History</button>
         </div>
       </div>
     </div>

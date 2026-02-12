@@ -68,3 +68,23 @@ export interface AppState {
   gestureState: GestureState;
   currentColorIndex: number;
 }
+
+// User session types
+export interface User {
+  id: string;
+  name: string;
+  createdAt: number;
+}
+
+export interface SavedBalloon {
+  id: string;
+  stroke: Stroke;
+  color: string;
+  createdAt: number;
+}
+
+export interface UserHistory {
+  userId: string;
+  balloons: SavedBalloon[];
+  lastModified: number;
+}

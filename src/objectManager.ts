@@ -118,6 +118,7 @@ export class ObjectManager {
   private packetSystems: ParticleSystem[] = [];
   private maxParticleSystems = 5;
   private currentParticleIdx = 0;
+  private onBalloonCreatedCallback: ((stroke: Stroke, color: string) => void) | null = null;
 
   constructor(scene: Scene3D, canvasWidth: number, canvasHeight: number) {
     this.scene = scene;
@@ -127,6 +128,11 @@ export class ObjectManager {
     for (let i = 0; i < this.maxParticleSystems; i++) {
       this.packetSystems.push(new ParticleSystem(this.scene.getScene()));
     }
+  }
+
+  // Set callback for when a balloon is created
+  onBalloonCreated(callback: (stroke: Stroke, color: string) => void): void {
+    this.onBalloonCreatedCallback = callback;
   }
 
   updateSize(width: number, height: number): void {
@@ -173,6 +179,11 @@ export class ObjectManager {
 
     // Settle into position
     this.findBalancedPosition(balloonObject);
+
+    // Notify that a balloon was created
+    if (this.onBalloonCreatedCallback) {
+      this.onBalloonCreatedCallback(stroke, stroke.color);
+    }
 
     return balloonObject;
   }
