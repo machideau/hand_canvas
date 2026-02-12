@@ -6,15 +6,127 @@ import { BalloonInflator } from './balloonInflator';
 import { SCENE, TIMING } from './constants';
 import { audioManager } from './audioManager';
 
+class ParticleSystem {
+  private particles: THREE.Points;
+  private geometry: THREE.BufferGeometry;
+  private material: THREE.PointsMaterial;
+  private count = 100;
+  private positions: Float32Array;
+  private velocities: THREE.Vector3[] = [];
+  private colors: Float32Array;
+  private alive = false;
+  private scene: THREE.Scene;
+  private startTime = 0;
+  private duration = 1.0;
+
+  constructor(scene: THREE.Scene) {
+    this.scene = scene;
+    this.geometry = new THREE.BufferGeometry();
+    this.positions = new Float32Array(this.count * 3);
+    this.colors = new Float32Array(this.count * 3);
+
+    this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
+    this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
+
+    this.material = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    this.particles = new THREE.Points(this.geometry, this.material);
+    this.particles.visible = false;
+    this.scene.add(this.particles);
+  }
+
+  explode(position: THREE.Vector3, color: THREE.Color) {
+    this.alive = true;
+    this.startTime = performance.now();
+    this.particles.visible = true;
+    this.particles.position.copy(position);
+
+    const posAttr = this.geometry.attributes.position as THREE.BufferAttribute;
+    const colorAttr = this.geometry.attributes.color as THREE.BufferAttribute;
+
+    for (let i = 0; i < this.count; i++) {
+      // Start at origin relative to points object
+      posAttr.setXYZ(i, 0, 0, 0);
+
+      // Random velocity
+      const velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 5,
+        (Math.random() - 0.5) * 5,
+        (Math.random() - 0.5) * 5
+      );
+      this.velocities[i] = velocity;
+
+      // Color variation
+      const particleColor = color.clone();
+      particleColor.offsetHSL(0, 0, (Math.random() - 0.5) * 0.2);
+      colorAttr.setXYZ(i, particleColor.r, particleColor.g, particleColor.b);
+    }
+
+    posAttr.needsUpdate = true;
+    colorAttr.needsUpdate = true;
+  }
+
+  update(deltaTime: number) {
+    if (!this.alive) return;
+
+    const elapsed = (performance.now() - this.startTime) / 1000;
+    if (elapsed > this.duration) {
+      this.alive = false;
+      this.particles.visible = false;
+      return;
+    }
+
+    const posAttr = this.geometry.attributes.position as THREE.BufferAttribute;
+    const opacity = 1.0 - (elapsed / this.duration);
+    this.material.opacity = opacity;
+
+    for (let i = 0; i < this.count; i++) {
+      const v = this.velocities[i];
+      const x = posAttr.getX(i) + v.x * deltaTime;
+      const y = posAttr.getY(i) + v.y * deltaTime;
+      const z = posAttr.getZ(i) + v.z * deltaTime;
+
+      // Add gravity
+      v.y -= 9.8 * deltaTime * 0.2;
+      // Add friction
+      v.multiplyScalar(0.98);
+
+      posAttr.setXYZ(i, x, y, z);
+    }
+
+    posAttr.needsUpdate = true;
+  }
+
+  dispose() {
+    this.scene.remove(this.particles);
+    this.geometry.dispose();
+    this.material.dispose();
+  }
+}
+
 export class ObjectManager {
   private scene: Scene3D;
   private inflator: BalloonInflator;
   private objects: BalloonObject[] = [];
   private idCounter = 0;
+  private packetSystems: ParticleSystem[] = [];
+  private maxParticleSystems = 5;
+  private currentParticleIdx = 0;
 
   constructor(scene: Scene3D, canvasWidth: number, canvasHeight: number) {
     this.scene = scene;
     this.inflator = new BalloonInflator(scene.getCamera(), canvasWidth, canvasHeight);
+
+    // Initialize particle systems pooling
+    for (let i = 0; i < this.maxParticleSystems; i++) {
+      this.packetSystems.push(new ParticleSystem(this.scene.getScene()));
+    }
   }
 
   updateSize(width: number, height: number): void {
@@ -77,7 +189,9 @@ export class ObjectManager {
           duration: TIMING.INFLATE_DURATION,
           ease: 'elastic.out(1, 0.5)',
           onStart: () => {
-            audioManager.playSpatial('inflate', obj.mesh.position, 0.4);
+            // Smaller = higher pitch
+            const pitch = 0.8 + (1.0 / obj.scale) * 0.2;
+            audioManager.playSpatial('inflate', obj.mesh.position, 0.4, pitch);
           },
           onComplete: resolve
         });
@@ -128,6 +242,11 @@ export class ObjectManager {
   }
 
   update(deltaTime: number, elapsedTime: number): void {
+    // Update particle systems
+    for (const ps of this.packetSystems) {
+      ps.update(deltaTime);
+    }
+
     for (const obj of this.objects) {
       if (obj.isGrabbed) continue;
 
@@ -190,7 +309,9 @@ export class ObjectManager {
       }
     });
 
-    audioManager.playSpatial('poke', obj.mesh.position, 0.3, 0.8 + Math.random() * 0.4);
+    // Smaller = higher pitch
+    const pitch = 0.8 + (1.0 / obj.scale) * 0.4 + (Math.random() - 0.5) * 0.2;
+    audioManager.playSpatial('poke', obj.mesh.position, 0.3, pitch);
 
     // Jiggle rotation
     gsap.to(obj.mesh.rotation, {
@@ -262,13 +383,15 @@ export class ObjectManager {
           duration: TIMING.OBJECT_POP,
           ease: 'power2.in',
           onComplete: () => {
+            this.triggerPopEffect(obj.mesh.position, obj.color);
             this.scene.remove(obj.mesh);
             obj.mesh.geometry.dispose();
             (obj.mesh.material as THREE.Material).dispose();
             resolve();
           }
         });
-        audioManager.playSpatial('pop', obj.mesh.position, 0.4, 0.9 + Math.random() * 0.2);
+        const pitch = 0.9 + (1.0 / obj.scale) * 0.2 + (Math.random() - 0.5) * 0.2;
+        audioManager.playSpatial('pop', obj.mesh.position, 0.4, pitch);
       } else {
         // Pop animation
         gsap.to(obj.mesh.scale, {
@@ -285,6 +408,7 @@ export class ObjectManager {
               duration: TIMING.OBJECT_POP,
               ease: 'power2.in',
               onComplete: () => {
+                this.triggerPopEffect(obj.mesh.position, obj.color);
                 this.scene.remove(obj.mesh);
                 obj.mesh.geometry.dispose();
                 (obj.mesh.material as THREE.Material).dispose();
@@ -295,6 +419,12 @@ export class ObjectManager {
         });
       }
     });
+  }
+
+  private triggerPopEffect(position: THREE.Vector3, color: string): void {
+    const ps = this.packetSystems[this.currentParticleIdx];
+    ps.explode(position, new THREE.Color(color));
+    this.currentParticleIdx = (this.currentParticleIdx + 1) % this.maxParticleSystems;
   }
 
   async clearAll(): Promise<void> {

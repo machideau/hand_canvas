@@ -30,7 +30,8 @@ export type GestureType =
   | 'palm'      // Open palm
   | 'fist'      // Closed fist
   | 'poke'      // Index pointing at object
-  | 'swipe';    // Fast horizontal movement
+  | 'swipe'     // Fast horizontal movement
+  | 'triple';    // Index + Middle + Pinky (clear gesture)
 
 export interface GestureState {
   current: GestureType;

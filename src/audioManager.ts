@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type SoundEffect = 'pop' | 'inflate' | 'poke' | 'swipe' | 'select' | 'clear';
+export type SoundEffect = 'pop' | 'inflate' | 'poke' | 'swipe' | 'select' | 'clear' | 'join' | 'leave';
 
 export class AudioManager {
     private context: AudioContext | null = null;
@@ -15,7 +15,9 @@ export class AudioManager {
         poke: '/audio/poke.wav',
         swipe: '/audio/swipe.wav',
         select: '/audio/select.wav',
-        clear: '/audio/clear.wav'
+        clear: '/audio/clear.wav',
+        join: '/audio/join.wav',
+        leave: '/audio/leave.wav'
     };
 
     constructor() {
@@ -102,6 +104,30 @@ export class AudioManager {
 
         await Promise.all(loadTasks);
         console.log(`AudioManager: Loaded ${this.buffers.size} sounds`);
+    }
+
+    /**
+     * Play a 2D UI sound
+     */
+    public playUI(soundId: SoundEffect, volume: number = 0.5, playbackRate: number = 1.0): void {
+        if (!this.isInitialized || !this.context || this.isMuted) return;
+
+        const buffer = this.buffers.get(soundId);
+        if (!buffer) return;
+
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = playbackRate;
+
+        const gainNode = this.context.createGain();
+        gainNode.gain.value = volume;
+
+        source.connect(gainNode);
+        if (this.masterGain) {
+            gainNode.connect(this.masterGain);
+        }
+
+        source.start(0);
     }
 
     /**

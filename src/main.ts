@@ -42,6 +42,7 @@ class HandCanvas {
   private lastGestureState: GestureState | null = null;
   private currentLandmarks: HandLandmarks | null = null;
   private palmHoldStart = 0;
+  private tripleHoldStart = 0;
   private handDetected = false;
   private lastFrameTime = 0;
   private grabbedObject: BalloonObject | null = null;
@@ -365,16 +366,19 @@ class HandCanvas {
         break;
 
       case 'peer_joined':
+        audioManager.playUI('join', 0.6);
         this.showStatus('Friend joined!', 2000);
         break;
 
       case 'peer_left':
+        audioManager.playUI('leave', 0.5);
         this.showStatus('Friend left', 2000);
         break;
     }
   }
 
   private openInviteModal(): void {
+    audioManager.playUI('select', 0.4);
     this.inviteModal.classList.add('visible');
   }
 
@@ -662,6 +666,10 @@ class HandCanvas {
         this.handleSwipe(indexTip);
         break;
 
+      case 'triple':
+        this.handleTriple();
+        break;
+
       default:
         // Release grabbed object if gesture changes
         if (this.grabbedObject) {
@@ -675,6 +683,7 @@ class HandCanvas {
     // Reset timers and clear live position if gesture changed
     if (this.lastGestureState && state.current !== this.lastGestureState.current) {
       this.palmHoldStart = 0;
+      this.tripleHoldStart = 0;
       // Clear live position when leaving draw mode
       if (this.lastGestureState.current === 'draw') {
         this.drawingCanvas.clearLivePosition();
@@ -758,6 +767,29 @@ class HandCanvas {
       // Close and inflate current stroke
       this.closeAndInflate();
       this.palmHoldStart = 0;
+    }
+  }
+
+  private handleTriple(): void {
+    if (this.tripleHoldStart === 0) {
+      this.tripleHoldStart = performance.now();
+    }
+
+    const holdDuration = performance.now() - this.tripleHoldStart;
+    const progress = Math.min(holdDuration / GESTURE.TRIPLE_HOLD_TIME, 1);
+
+    if (progress > 0.1) {
+      this.showStatus(`Clearing in ${Math.ceil((GESTURE.TRIPLE_HOLD_TIME - holdDuration) / 100)}...`);
+    }
+
+    if (holdDuration >= GESTURE.TRIPLE_HOLD_TIME) {
+      this.clearAll();
+      // Broadcast to peers
+      if (this.multiplayer.isConnected()) {
+        this.multiplayer.broadcast({ type: 'clear_all' });
+      }
+      this.showStatus('Cleared all objects', 2000);
+      this.tripleHoldStart = 0;
     }
   }
 

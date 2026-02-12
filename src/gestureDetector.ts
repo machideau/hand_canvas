@@ -128,12 +128,51 @@ export class GestureDetector {
       this.palmHistory = [];
     }
 
+    // Check for triple finger (clear all)
+    if (this.isTripleFinger(landmarks)) {
+      return 'triple';
+    }
+
     // Check for draw mode (index finger extended) - check this early for responsiveness
     if (this.isPointingIndex(landmarks)) {
       return 'draw';
     }
 
     return 'none';
+  }
+
+  private isTripleFinger(landmarks: HandLandmarks): boolean {
+    const indexExtended = this.isFingerExtended(
+      landmarks,
+      LANDMARKS.INDEX_TIP,
+      LANDMARKS.INDEX_PIP,
+      LANDMARKS.INDEX_MCP
+    );
+
+    const middleExtended = this.isFingerExtended(
+      landmarks,
+      LANDMARKS.MIDDLE_TIP,
+      LANDMARKS.MIDDLE_PIP,
+      LANDMARKS.MIDDLE_MCP
+    );
+
+    const ringCurled = !this.isFingerExtended(
+      landmarks,
+      LANDMARKS.RING_TIP,
+      LANDMARKS.RING_PIP,
+      LANDMARKS.RING_MCP
+    );
+
+    const pinkyExtended = this.isFingerExtended(
+      landmarks,
+      LANDMARKS.PINKY_TIP,
+      LANDMARKS.PINKY_PIP,
+      LANDMARKS.PINKY_MCP
+    );
+
+    const thumbCurled = !this.isThumbExtended(landmarks);
+
+    return indexExtended && middleExtended && pinkyExtended && ringCurled && thumbCurled;
   }
 
   private distance(p1: Point2D, p2: Point2D): number {
