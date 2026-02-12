@@ -43,6 +43,7 @@ class HandCanvas {
   private currentLandmarks: HandLandmarks | null = null;
   private palmHoldStart = 0;
   private clearHoldStart = 0;
+  private lastClearGestureTime = 0;
   private handDetected = false;
   private lastFrameTime = 0;
   private grabbedObject: BalloonObject | null = null;
@@ -667,7 +668,7 @@ class HandCanvas {
         break;
 
       case 'clear':
-        this.handleClear();
+        this.lastClearGestureTime = performance.now();
         break;
 
       default:
@@ -683,7 +684,7 @@ class HandCanvas {
     // Reset timers and clear live position if gesture changed
     if (this.lastGestureState && state.current !== this.lastGestureState.current) {
       this.palmHoldStart = 0;
-      this.clearHoldStart = 0;
+      // Note: we don't reset clearHoldStart here because we use a time-based buffer in handleClear
       // Clear live position when leaving draw mode
       if (this.lastGestureState.current === 'draw') {
         this.drawingCanvas.clearLivePosition();
@@ -771,12 +772,22 @@ class HandCanvas {
   }
 
   private handleClear(): void {
-    if (this.clearHoldStart === 0) {
-      this.clearHoldStart = performance.now();
+    const now = performance.now();
+
+    // Check if the gesture was seen very recently (300ms buffer)
+    const isGestureActive = (now - this.lastClearGestureTime < 300);
+
+    if (!isGestureActive) {
+      this.clearHoldStart = 0;
+      return;
     }
 
-    const holdTime = 700; // Reduce hold time for better responsiveness
-    const holdDuration = performance.now() - this.clearHoldStart;
+    if (this.clearHoldStart === 0) {
+      this.clearHoldStart = now;
+    }
+
+    const holdTime = 700;
+    const holdDuration = now - this.clearHoldStart;
     const timeLeft = Math.max(0, (holdTime - holdDuration) / 1000);
 
     if (holdDuration > 100) {
@@ -791,6 +802,7 @@ class HandCanvas {
       }
       this.showStatus('Cleared all objects', 2000);
       this.clearHoldStart = 0;
+      this.lastClearGestureTime = 0;
     }
   }
 
@@ -877,6 +889,9 @@ class HandCanvas {
 
     // Render drawing canvas
     this.drawingCanvas.render();
+
+    // Check clear gesture countdown
+    this.handleClear();
 
     // Render hand visualization
     const gestureState = this.lastGestureState || {

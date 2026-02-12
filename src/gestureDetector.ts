@@ -163,17 +163,10 @@ export class GestureDetector {
       LANDMARKS.RING_MCP
     );
 
-    const pinkyExtended = this.isFingerExtended(
-      landmarks,
-      LANDMARKS.PINKY_TIP,
-      LANDMARKS.PINKY_PIP,
-      LANDMARKS.PINKY_MCP
-    );
-
-    const thumbExtended = this.isThumbExtended(landmarks);
-
-    // Two fingers: Index and Middle extended. Others (Ring, Pinky, and ideally Thumb) curled.
-    return indexExtended && middleExtended && !ringExtended && !pinkyExtended && !thumbExtended;
+    // Reliable check for "Peace" sign (Index + Middle).
+    // We only require Ring to be down to distinguish from 3+ finger gestures.
+    // We ignore Pinky and Thumb as they are often noisy or varied in position.
+    return indexExtended && middleExtended && !ringExtended;
   }
 
   private distance(p1: Point2D, p2: Point2D): number {
