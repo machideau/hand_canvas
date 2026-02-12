@@ -1,10 +1,13 @@
-import { Hands, Results } from '@mediapipe/hands';
+import * as mpHands from '@mediapipe/hands';
 import { HandLandmarks, Point2D } from './types';
+
+// Compatibility hack for MediaPipe in different environments (Vite/Rollup)
+const Hands = (mpHands as any).Hands || (mpHands as any).default?.Hands || mpHands;
 
 export type HandResultsCallback = (landmarks: HandLandmarks | null) => void;
 
 export class HandTracker {
-  private hands: Hands;
+  private hands: any; // Using any to avoid complex type issues with the hack
   private videoElement: HTMLVideoElement;
   private callback: HandResultsCallback | null = null;
   private isRunning = false;
@@ -16,7 +19,7 @@ export class HandTracker {
     this.videoElement = videoElement;
 
     this.hands = new Hands({
-      locateFile: (file) => {
+      locateFile: (file: string) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
       }
     });
@@ -28,7 +31,7 @@ export class HandTracker {
       minTrackingConfidence: 0.5
     });
 
-    this.hands.onResults((results) => this.onResults(results));
+    this.hands.onResults((results: any) => this.onResults(results));
   }
 
   setCanvasSize(width: number, height: number): void {
@@ -36,7 +39,7 @@ export class HandTracker {
     this.canvasHeight = height;
   }
 
-  private onResults(results: Results): void {
+  private onResults(results: any): void {
     if (!this.callback) return;
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -45,12 +48,12 @@ export class HandTracker {
       const worldLandmarks = results.multiHandWorldLandmarks?.[0];
 
       // Convert normalized coordinates to canvas coordinates
-      const convertedLandmarks: Point2D[] = landmarks.map((lm) => ({
+      const convertedLandmarks: Point2D[] = landmarks.map((lm: any) => ({
         x: (1 - lm.x) * this.canvasWidth,  // Mirror horizontally
         y: lm.y * this.canvasHeight
       }));
 
-      const convertedWorldLandmarks = worldLandmarks?.map((lm) => ({
+      const convertedWorldLandmarks = worldLandmarks?.map((lm: any) => ({
         x: -lm.x,  // Mirror
         y: -lm.y,
         z: lm.z
