@@ -156,14 +156,14 @@ export class GestureDetector {
       LANDMARKS.MIDDLE_MCP
     );
 
-    const ringCurled = !this.isFingerExtended(
+    const ringExtended = this.isFingerExtended(
       landmarks,
       LANDMARKS.RING_TIP,
       LANDMARKS.RING_PIP,
       LANDMARKS.RING_MCP
     );
 
-    const pinkyExtended = this.isFingerExtended(
+    const pinkyCurled = !this.isFingerExtended(
       landmarks,
       LANDMARKS.PINKY_TIP,
       LANDMARKS.PINKY_PIP,
@@ -172,7 +172,7 @@ export class GestureDetector {
 
     const thumbCurled = !this.isThumbExtended(landmarks);
 
-    return indexExtended && middleExtended && pinkyExtended && ringCurled && thumbCurled;
+    return indexExtended && middleExtended && ringExtended && pinkyCurled && thumbCurled;
   }
 
   private distance(p1: Point2D, p2: Point2D): number {
