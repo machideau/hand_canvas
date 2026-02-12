@@ -503,13 +503,20 @@ class HandCanvas {
       this.hideStatus();
     } catch (error: any) {
       console.error('HandCanvas: Failed to initialize:', error);
-      this.showStatus('Initialization failed');
 
-      const errorMsg = error?.message || 'Unknown error';
+      let errorMsg = error?.message || 'Unknown error';
+      if (errorMsg.includes('Permission denied')) {
+        errorMsg = 'Camera access denied. Please allow camera access and refresh.';
+      } else if (errorMsg.includes('Could not start video source')) {
+        errorMsg = 'Camera is in use by another application.';
+      }
+
+      this.showStatus('Initialization failed');
       this.loadingOverlay.querySelector('.loading-text')!.textContent =
         `Error: ${errorMsg}. Please ensure camera access is granted and refresh.`;
 
       // Still try to start animation so 3D scene works
+      console.log('HandCanvas: Attempting to start animation loop despite error');
       this.animate();
     }
   }

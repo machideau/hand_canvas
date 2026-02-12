@@ -18,9 +18,12 @@ export class HandTracker {
   constructor(videoElement: HTMLVideoElement) {
     this.videoElement = videoElement;
 
+    console.log('HandTracker: Initializing MediaPipe Hands...');
     this.hands = new Hands({
       locateFile: (file: string) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        const url = `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`;
+        console.log(`HandTracker: Loading MediaPipe asset: ${url}`);
+        return url;
       }
     });
 
@@ -32,6 +35,7 @@ export class HandTracker {
     });
 
     this.hands.onResults((results: any) => this.onResults(results));
+    console.log('HandTracker: MediaPipe Hands initialized');
   }
 
   setCanvasSize(width: number, height: number): void {
