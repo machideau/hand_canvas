@@ -481,20 +481,36 @@ class HandCanvas {
 
   private async init(): Promise<void> {
     try {
+      console.log('HandCanvas: Starting initialization...');
+      this.showStatus('Starting webcam...');
+
       // Start hand tracking
+      console.log('HandCanvas: Calling handTracker.start...');
       await this.handTracker.start((landmarks) => this.onHandResults(landmarks));
+      console.log('HandCanvas: handTracker.start resolved');
 
       // Setup camera preview
       this.setupCameraPreview();
 
       // Hide loading overlay
+      console.log('HandCanvas: Hiding loading overlay');
       this.loadingOverlay.classList.add('hidden');
 
       // Start animation loop
       this.animate();
-    } catch (error) {
-      console.error('Failed to initialize:', error);
-      this.showStatus('Camera access denied. Please allow camera access and refresh.');
+      console.log('HandCanvas: Animation started');
+
+      this.hideStatus();
+    } catch (error: any) {
+      console.error('HandCanvas: Failed to initialize:', error);
+      this.showStatus('Initialization failed');
+
+      const errorMsg = error?.message || 'Unknown error';
+      this.loadingOverlay.querySelector('.loading-text')!.textContent =
+        `Error: ${errorMsg}. Please ensure camera access is granted and refresh.`;
+
+      // Still try to start animation so 3D scene works
+      this.animate();
     }
   }
 
