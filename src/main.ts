@@ -775,14 +775,15 @@ class HandCanvas {
       this.tripleHoldStart = performance.now();
     }
 
+    const holdTime = 700; // Reduce hold time for better responsiveness
     const holdDuration = performance.now() - this.tripleHoldStart;
-    const progress = Math.min(holdDuration / GESTURE.TRIPLE_HOLD_TIME, 1);
+    const timeLeft = Math.max(0, (holdTime - holdDuration) / 1000);
 
-    if (progress > 0.1) {
-      this.showStatus(`Clearing in ${Math.ceil((GESTURE.TRIPLE_HOLD_TIME - holdDuration) / 100)}...`);
+    if (holdDuration > 100) {
+      this.showStatus(`Hold to clear... ${timeLeft.toFixed(1)}s`);
     }
 
-    if (holdDuration >= GESTURE.TRIPLE_HOLD_TIME) {
+    if (holdDuration >= holdTime) {
       this.clearAll();
       // Broadcast to peers
       if (this.multiplayer.isConnected()) {

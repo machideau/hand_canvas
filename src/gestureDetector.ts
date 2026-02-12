@@ -129,7 +129,8 @@ export class GestureDetector {
     }
 
     // Check for triple finger (clear all)
-    if (this.isTripleFinger(landmarks)) {
+    const triple = this.isTripleFinger(landmarks);
+    if (triple) {
       return 'triple';
     }
 
@@ -163,16 +164,16 @@ export class GestureDetector {
       LANDMARKS.RING_MCP
     );
 
-    const pinkyCurled = !this.isFingerExtended(
+    const pinkyExtended = this.isFingerExtended(
       landmarks,
       LANDMARKS.PINKY_TIP,
       LANDMARKS.PINKY_PIP,
       LANDMARKS.PINKY_MCP
     );
 
-    const thumbCurled = !this.isThumbExtended(landmarks);
-
-    return indexExtended && middleExtended && ringExtended && pinkyCurled && thumbCurled;
+    // To detect Index+Middle+Ring, we want those three up and specifically pinky down.
+    // We ignore the thumb to make it more reliable (can be either tucked or out).
+    return indexExtended && middleExtended && ringExtended && !pinkyExtended;
   }
 
   private distance(p1: Point2D, p2: Point2D): number {
