@@ -1,10 +1,10 @@
-// Pastel color palette
+// Arctic Midnight color palette
 export const COLORS = {
-  pink: '#FFB3BA',
-  yellow: '#FFFFBA',
-  mint: '#BAFFC9',
-  blue: '#BAE1FF',
-  lavender: '#E8BAFF'
+  cyan: '#22D3EE',
+  indigo: '#818CF8',
+  sky: '#7DD3FC',
+  teal: '#2DD4BF',
+  violet: '#A78BFA'
 };
 
 export const COLOR_ARRAY = Object.values(COLORS);
@@ -95,6 +95,6 @@ export const VISUAL = {
 
 // Background gradient colors
 export const BACKGROUND = {
-  COLOR_START: '#475569',  // slate
-  COLOR_END: '#a78bfa'     // lavender
+  COLOR_START: '#020617',  // navy black
+  COLOR_END: '#1E1B4B'     // deep indigo
 };
