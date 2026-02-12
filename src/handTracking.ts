@@ -2,7 +2,18 @@ import * as mpHands from '@mediapipe/hands';
 import { HandLandmarks, Point2D } from './types';
 
 // Compatibility hack for MediaPipe in different environments (Vite/Rollup)
-const Hands = (mpHands as any).Hands || (mpHands as any).default?.Hands || mpHands;
+// This is more robust for production builds where exports might be wrapped differently
+let Hands = (mpHands as any).Hands || (mpHands as any).default?.Hands || (mpHands as any).default || mpHands;
+
+// If we are in a browser and still haven't found it, check the global scope (though we prefer the module)
+if (typeof Hands !== 'function' && typeof window !== 'undefined' && (window as any).Hands) {
+  Hands = (window as any).Hands;
+}
+
+console.log('HandTracker: Resolved Hands constructor type:', typeof Hands);
+if (typeof Hands !== 'function') {
+  console.error('HandTracker: Hands is not a constructor! Contents:', Hands);
+}
 
 export type HandResultsCallback = (landmarks: HandLandmarks | null) => void;
 
