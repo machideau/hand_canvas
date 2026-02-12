@@ -42,7 +42,7 @@ class HandCanvas {
   private lastGestureState: GestureState | null = null;
   private currentLandmarks: HandLandmarks | null = null;
   private palmHoldStart = 0;
-  private tripleHoldStart = 0;
+  private clearHoldStart = 0;
   private handDetected = false;
   private lastFrameTime = 0;
   private grabbedObject: BalloonObject | null = null;
@@ -666,8 +666,8 @@ class HandCanvas {
         this.handleSwipe(indexTip);
         break;
 
-      case 'triple':
-        this.handleTriple();
+      case 'clear':
+        this.handleClear();
         break;
 
       default:
@@ -683,7 +683,7 @@ class HandCanvas {
     // Reset timers and clear live position if gesture changed
     if (this.lastGestureState && state.current !== this.lastGestureState.current) {
       this.palmHoldStart = 0;
-      this.tripleHoldStart = 0;
+      this.clearHoldStart = 0;
       // Clear live position when leaving draw mode
       if (this.lastGestureState.current === 'draw') {
         this.drawingCanvas.clearLivePosition();
@@ -770,13 +770,13 @@ class HandCanvas {
     }
   }
 
-  private handleTriple(): void {
-    if (this.tripleHoldStart === 0) {
-      this.tripleHoldStart = performance.now();
+  private handleClear(): void {
+    if (this.clearHoldStart === 0) {
+      this.clearHoldStart = performance.now();
     }
 
     const holdTime = 700; // Reduce hold time for better responsiveness
-    const holdDuration = performance.now() - this.tripleHoldStart;
+    const holdDuration = performance.now() - this.clearHoldStart;
     const timeLeft = Math.max(0, (holdTime - holdDuration) / 1000);
 
     if (holdDuration > 100) {
@@ -790,7 +790,7 @@ class HandCanvas {
         this.multiplayer.broadcast({ type: 'clear_all' });
       }
       this.showStatus('Cleared all objects', 2000);
-      this.tripleHoldStart = 0;
+      this.clearHoldStart = 0;
     }
   }
 
