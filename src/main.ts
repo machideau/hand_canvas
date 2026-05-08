@@ -6,7 +6,7 @@ import { Scene3D } from './scene3D';
 import { ObjectManager } from './objectManager';
 import { Multiplayer, MultiplayerEvent } from './multiplayer';
 import { userSession } from './userSession';
-import { HandLandmarks, GestureState, BalloonObject, Stroke, User } from './types';
+import { HandLandmarks, GestureState, BalloonObject, Stroke } from './types';
 import { GESTURE, TIMING } from './constants';
 import { audioManager } from './audioManager';
 
@@ -976,7 +976,7 @@ class HandCanvas {
     clearHistoryBtn?.addEventListener('click', () => this.clearUserHistory());
 
     // Listen to user changes
-    userSession.onUserChange((user) => {
+    userSession.onUserChange((_user) => {
       this.updateCurrentUserDisplay();
       // Clear current scene when switching users
       this.clearAll();

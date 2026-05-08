@@ -1,19 +1,34 @@
 import * as mpHands from '@mediapipe/hands';
 import { HandLandmarks, Point2D } from './types';
 
-// Compatibility hack for MediaPipe in different environments (Vite/Rollup)
+// Compatibility hack for MediaPipe in different environments (Vite/Rollup/Production)
 // This is more robust for production builds where exports might be wrapped differently
-let Hands = (mpHands as any).Hands || (mpHands as any).default?.Hands || (mpHands as any).default || mpHands;
+let HandsConstructor: any = (mpHands as any).Hands || (mpHands as any).default?.Hands || (mpHands as any).default || mpHands;
 
-// If we are in a browser and still haven't found it, check the global scope (though we prefer the module)
-if (typeof Hands !== 'function' && typeof window !== 'undefined' && (window as any).Hands) {
-  Hands = (window as any).Hands;
+// If we are in a browser and still haven't found a valid constructor, check the global scope
+// In production builds, MediaPipe often attaches itself to the window object
+if (typeof HandsConstructor !== 'function' && typeof window !== 'undefined' && (window as any).Hands) {
+  HandsConstructor = (window as any).Hands;
 }
 
-console.log('HandTracker: Resolved Hands constructor type:', typeof Hands);
-if (typeof Hands !== 'function') {
-  console.error('HandTracker: Hands is not a constructor! Contents:', Hands);
+// Final fallback: if it's still not a function, check if it's an object containing the constructor
+// This handles cases where mpHands might be { Hands: [class], ... } but the above logic got confused
+if (typeof HandsConstructor !== 'function' && HandsConstructor && typeof HandsConstructor.Hands === 'function') {
+  HandsConstructor = HandsConstructor.Hands;
 }
+
+console.log('HandTracker: Resolved Hands constructor type:', typeof HandsConstructor);
+if (typeof HandsConstructor !== 'function') {
+  console.error('HandTracker: Hands is not a constructor! Contents:', HandsConstructor);
+  // Re-check window just in case it was added late
+  if (typeof window !== 'undefined' && (window as any).Hands) {
+    console.log('HandTracker: Found Hands on window during fallback check');
+    HandsConstructor = (window as any).Hands;
+  }
+}
+
+// Internal alias for the constructor
+const Hands = HandsConstructor;
 
 export type HandResultsCallback = (landmarks: HandLandmarks | null) => void;
 
